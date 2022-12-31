@@ -16,7 +16,7 @@ VERSION = "0.1"
 APP_NAME = "Spotify History Analyzer"
 APP_DESCRIPTION = "Detailed analysis of data contained in Spotify Streaming History files."
 
-OUTPUT_FOLDER = "output/"
+OUTPUT_FOLDER = "outputfreddy/"
 
 
 def parse_argv() -> dict:
@@ -177,6 +177,8 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.savefig(OUTPUT_FOLDER + f"time_per_artist_in_{year}.png")
 
+        top_artists_of_the_year = list(time_per_artist_per_year.index.values[:10])
+
         # Per month
         for month in range(1, 12 + 1):
             df_per_month = df_per_year[df_per_year["ts"].dt.month == month]
@@ -192,6 +194,25 @@ if __name__ == '__main__':
                 plt.xticks(rotation=45, ha="right")
                 plt.tight_layout()
                 plt.savefig(OUTPUT_FOLDER + f"time_per_artist_in_{year}-{month}.png")
+
+                # We want to show artists that were top for a month even if they don't make the top for the whole year.
+                #for artist in time_per_artist_per_month.index.values[:2]:
+                #    if artist not in top_artists_of_the_year:
+                #        top_artists_of_the_year.append(artist)
+
+        # Time per month for each top artist
+        plt.clf()
+        for artist in top_artists_of_the_year:
+            sdf = df_per_year[df_per_year["master_metadata_album_artist_name"] == artist]
+            time_per_month_for_artist = sdf.groupby(sdf.ts.dt.month)["ms_played"].sum().divide(1000 * 60)
+            plt.plot(time_per_month_for_artist.index, time_per_month_for_artist, label=artist)
+        plt.title(f"Time for top artists in {year}")
+        plt.ylabel("Streaming time (minutes)")
+        plt.xlabel("Month")
+        plt.grid(True, axis="y")
+        plt.tight_layout()
+        plt.legend()
+        plt.savefig(OUTPUT_FOLDER + f"time_for_top_artists_in_{year}.png")
 
     # ----------
     # Nb of streams per artist
